@@ -3,6 +3,14 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth'
 import { prisma } from '@/lib/prisma'
 
+// Helper function to generate a slug from a string
+function generateSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -61,10 +69,23 @@ export async function POST(request: Request) {
       )
     }
 
+    // Generate a slug from the name
+    const baseSlug = generateSlug(data.name)
+    
+    // Check if the slug already exists and create a unique one if needed
+    let slug = baseSlug
+    let counter = 1
+    
+    while (await prisma.category.findUnique({ where: { slug } })) {
+      slug = `${baseSlug}-${counter}`
+      counter++
+    }
+    
     // Create the category
     const category = await prisma.category.create({
       data: {
         name: data.name,
+        slug,
         description: data.description || '',
       },
     })
