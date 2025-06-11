@@ -4,6 +4,24 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 
+type Category = {
+  id: string
+  name: string
+}
+
+type Post = {
+  id: string
+  title: string
+  published: boolean
+  createdAt: Date
+  author?: {
+    name: string | null
+  } | null
+  categories: {
+    category: Category
+  }[]
+}
+
 export default async function PostsPage() {
   const session = await getServerSession(authOptions)
   
@@ -26,7 +44,7 @@ export default async function PostsPage() {
         }
       }
     }
-  })
+  }) as Post[]
 
   return (
     <div>

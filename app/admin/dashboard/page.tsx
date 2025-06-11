@@ -3,6 +3,16 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 
+type Post = {
+  id: string
+  title: string
+  published: boolean
+  createdAt: Date
+  author?: {
+    name: string | null
+  } | null
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
   
@@ -26,7 +36,7 @@ export default async function DashboardPage() {
         select: { name: true }
       }
     }
-  })
+  }) as Post[]
 
   return (
     <div>
