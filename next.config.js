@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -26,6 +28,13 @@ const nextConfig = {
         path: false,
       };
     }
+    
+    // Add path aliases for better module resolution
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname),
+    };
+    
     return config;
   },
 }
