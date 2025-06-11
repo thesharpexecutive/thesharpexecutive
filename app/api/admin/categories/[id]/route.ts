@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,8 +18,10 @@ export async function GET(
       )
     }
 
+    const { id } = await params
+
     const category = await prisma.category.findUnique({
-      where: { id: context.params.id },
+      where: { id },
       include: {
         _count: {
           select: { posts: true },
@@ -46,7 +48,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -58,6 +60,7 @@ export async function PUT(
       )
     }
 
+    const { id } = await params
     const data = await request.json()
     
     // Validate required fields
@@ -72,7 +75,7 @@ export async function PUT(
     const existingCategory = await prisma.category.findFirst({
       where: {
         name: data.name,
-        id: { not: context.params.id },
+        id: { not: id },
       },
     })
 
@@ -85,7 +88,7 @@ export async function PUT(
 
     // Update the category
     const category = await prisma.category.update({
-      where: { id: context.params.id },
+      where: { id },
       data: {
         name: data.name,
         description: data.description || '',
@@ -104,7 +107,7 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -116,9 +119,11 @@ export async function DELETE(
       )
     }
 
+    const { id } = await params
+
     // Check if category has posts
     const categoryWithPosts = await prisma.category.findUnique({
-      where: { id: context.params.id },
+      where: { id },
       include: { _count: { select: { posts: true } } },
     })
 
@@ -138,7 +143,7 @@ export async function DELETE(
 
     // Delete the category
     await prisma.category.delete({
-      where: { id: context.params.id },
+      where: { id },
     })
 
 
