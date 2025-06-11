@@ -1,18 +1,17 @@
 import { notFound } from 'next/navigation'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import Image from 'next/image'
 import { format } from 'date-fns'
 import { Metadata } from 'next'
 
-const prisma = new PrismaClient()
-
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }): Promise<Metadata> {
+  const resolvedParams = await params
   const post = await prisma.post.findUnique({
-    where: { slug: params.slug, published: true },
+    where: { slug: resolvedParams.slug, published: true },
     include: { author: { select: { name: true } } }
   })
 
@@ -38,10 +37,11 @@ export async function generateMetadata({
 export default async function BlogPostPage({
   params,
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
+  const resolvedParams = await params
   const post = await prisma.post.findUnique({
-    where: { slug: params.slug, published: true },
+    where: { slug: resolvedParams.slug, published: true },
     include: {
       author: {
         select: { name: true }

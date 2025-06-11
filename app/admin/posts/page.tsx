@@ -1,10 +1,8 @@
-import { PrismaClient } from '@prisma/client'
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export default async function PostsPage() {
   const session = await getServerSession(authOptions)

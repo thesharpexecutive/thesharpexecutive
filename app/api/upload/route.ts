@@ -3,7 +3,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { randomBytes } from 'crypto'
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from '../auth/[...nextauth]/route'
+import { authOptions } from '../auth/[...nextauth]/auth'
 
 // Generate a random string for filenames
 function generateRandomString(length: number = 16): string {
