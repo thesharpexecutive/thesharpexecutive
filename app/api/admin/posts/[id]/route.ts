@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -19,8 +17,10 @@ export async function GET(
       )
     }
 
+    const { id } = await params
+
     const post = await prisma.post.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         author: {
           select: { name: true, email: true },
@@ -48,7 +48,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -60,6 +60,7 @@ export async function PUT(
       )
     }
 
+    const { id } = await params
     const data = await request.json()
     
     // Validate required fields
@@ -74,7 +75,7 @@ export async function PUT(
     const existingPost = await prisma.post.findFirst({
       where: {
         slug: data.slug,
-        id: { not: params.id },
+        id: { not: id },
       },
     })
 
@@ -87,7 +88,7 @@ export async function PUT(
 
     // Update the post
     const post = await prisma.post.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         title: data.title,
         slug: data.slug,
@@ -110,7 +111,7 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -122,9 +123,11 @@ export async function DELETE(
       )
     }
 
+    const { id } = await params
+
     // Delete the post
     await prisma.post.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
 
