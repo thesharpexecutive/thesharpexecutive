@@ -4,6 +4,15 @@ import Image from 'next/image'
 import { format } from 'date-fns'
 import { Metadata } from 'next'
 
+type Category = {
+  id: string
+  name: string
+}
+
+type PostCategory = {
+  category: Category
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -68,7 +77,7 @@ export default async function BlogPostPage({
             </time>
             {post.categories.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {post.categories.map(({ category }) => (
+                {post.categories.map(({ category }: PostCategory) => (
                   <a
                     key={category.id}
                     href={`/blog/category/${category.id}`}
