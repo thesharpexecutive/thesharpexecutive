@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const apiKey = process.env.NEXT_PUBLIC_CONVERTKIT_API_KEY;
 
     if (!formId || !apiKey) {
-      const errorMsg = 'Missing ConvertKit configuration - ';
+      let errorMsg = 'Missing ConvertKit configuration - ';
       if (!formId) errorMsg += 'FORM_ID is missing, ';
       if (!apiKey) errorMsg += 'API_KEY is missing';
       console.error(errorMsg);
