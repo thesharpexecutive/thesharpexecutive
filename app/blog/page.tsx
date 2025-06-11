@@ -1,9 +1,30 @@
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import Image from 'next/image'
 import Link from 'next/link'
 import { format } from 'date-fns'
 
-const prisma = new PrismaClient()
+type Category = {
+  id: string
+  name: string
+}
+
+type PostCategory = {
+  category: Category
+}
+
+type Post = {
+  id: string
+  title: string
+  slug: string
+  excerpt: string | null
+  featuredImage: string | null
+  published: boolean
+  createdAt: Date
+  author?: {
+    name: string | null
+  } | null
+  categories: PostCategory[]
+}
 
 export default async function BlogPage() {
   // Get all published posts with author and categories
@@ -33,7 +54,7 @@ export default async function BlogPage() {
         </div>
         
         <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-          {posts.map((post) => (
+          {posts.map((post: Post) => (
             <article key={post.id} className="flex flex-col items-start justify-between">
               <div className="relative w-full">
                 {post.featuredImage ? (
@@ -58,7 +79,7 @@ export default async function BlogPage() {
                   </time>
                   {post.categories.length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {post.categories.map(({ category }) => (
+                      {post.categories.map(({ category }: PostCategory) => (
                         <Link
                           key={category.id}
                           href={`/blog/category/${category.id}`}
