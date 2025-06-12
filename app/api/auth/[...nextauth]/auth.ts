@@ -27,6 +27,7 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/admin/login',
     error: '/admin/login',
+    signOut: '/admin/login',
   },
   // Configure cookies for better security and cross-origin support
   cookies: {
@@ -37,7 +38,8 @@ export const authOptions: NextAuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'development' ? 'localhost' : undefined,
+        // Remove domain restriction to avoid cookie issues
+        domain: undefined,
       },
     },
   },
