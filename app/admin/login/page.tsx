@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { signIn, useSession, getSession } from 'next-auth/react'
+import { useState } from 'react'
+import { signIn } from 'next-auth/react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -10,8 +11,9 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   
-  // NO AUTOMATIC SESSION CHECK - only redirect after explicit login
-  // This prevents infinite redirect loops
+  // Get callback URL from query parameters
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams?.get('callbackUrl') || '/admin/dashboard'
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -28,33 +30,14 @@ export default function LoginPage() {
     try {
       console.log('Attempting login with email:', email)
       
-      // BRUTE FORCE APPROACH: Try multiple methods in sequence
-      
-      // Method 1: Try direct signIn with redirect
-      try {
-        console.log('Trying method 1: signIn with redirect=true')
-        await signIn('credentials', {
-          redirect: true,
-          callbackUrl: '/admin/dashboard',
-          email,
-          password
-        })
-        
-        // If we get here, the redirect failed
-        console.log('Method 1 failed to redirect')
-      } catch (e) {
-        console.log('Method 1 error:', e)
-      }
-      
-      // Method 2: Try signIn without redirect and check result
-      console.log('Trying method 2: signIn with redirect=false')
+      // Simple approach - let NextAuth and middleware handle the redirect
       const result = await signIn('credentials', {
-        redirect: false,
+        redirect: false, // We'll handle redirect manually
         email,
         password
       })
       
-      console.log('Method 2 sign in result:', result)
+      console.log('Sign in result:', result)
       
       if (result?.error) {
         // Handle error
@@ -65,28 +48,9 @@ export default function LoginPage() {
         
         setError(errorMsg)
       } else {
-        // Success! Try multiple force navigation approaches
-        console.log('Login successful, forcing navigation to dashboard')
-        
-        // Method 3: Try router.push
-        try {
-          // Force a hard navigation to dashboard
-          console.log('CRITICAL: Forcing navigation to dashboard')
-          document.cookie = 'auth_redirect=dashboard; path=/; max-age=60;'
-          
-          // Method 3a: window.location.replace (most direct)
-          window.location.replace('/admin/dashboard')
-          
-          // Method 3b: Fallback to window.location.href
-          setTimeout(() => {
-            console.log('Fallback to window.location.href')
-            window.location.href = '/admin/dashboard'
-          }, 100)
-        } catch (e) {
-          console.error('Navigation error:', e)
-          // Last resort
-          window.location.href = '/admin/dashboard'
-        }
+        // Success! Let the middleware handle the redirect
+        console.log('Login successful, redirecting to:', callbackUrl)
+        window.location.href = callbackUrl
       }
     } catch (err) {
       console.error('Login error:', err)

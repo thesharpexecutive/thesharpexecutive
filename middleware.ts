@@ -37,41 +37,71 @@ const isPublicPath = (pathname: string): boolean => {
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   
+  // Always log the request for debugging
+  console.log(`[Middleware] Processing request: ${pathname}`)
+  
   // Skip middleware for public paths
   if (isPublicPath(pathname)) {
-    console.log(`[Middleware] Allowing public path: ${pathname}`)
+    console.log(`[Middleware] Public path detected: ${pathname}`)
     
-    // If user is already authenticated and trying to access login page, redirect to dashboard
+    // Special case: If user is already authenticated and trying to access login page, redirect to dashboard
     if (pathname === '/admin/login') {
-      const token = await getToken({ req: request })
-      if (token) {
-        console.log('[Middleware] User already authenticated, redirecting to dashboard')
-        return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+      try {
+        const token = await getToken({
+          req: request,
+          secret: process.env.NEXTAUTH_SECRET,
+          secureCookie: process.env.NODE_ENV === 'production'
+        })
+        
+        if (token) {
+          console.log('[Middleware] User already authenticated, redirecting to dashboard')
+          const dashboardUrl = new URL('/admin/dashboard', request.url)
+          return NextResponse.redirect(dashboardUrl)
+        }
+      } catch (error) {
+        console.error('[Middleware] Error checking token:', error)
       }
     }
     
     return NextResponse.next()
   }
 
-  console.log(`[Middleware] Checking auth for protected path: ${pathname}`)
+  console.log(`[Middleware] Protected path detected: ${pathname}`)
   
-  // Get the token from the request
-  const token = await getToken({ 
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET
-  })
-  
-  // If no token, redirect to login with callback URL
-  if (!token) {
-    console.log('[Middleware] No token found, redirecting to login')
+  try {
+    // Get the token from the request with explicit options
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+      secureCookie: process.env.NODE_ENV === 'production'
+    })
+    
+    // Debug token information
+    console.log(`[Middleware] Token check result:`, token ? 'Token found' : 'No token')
+    
+    // If no token, redirect to login with callback URL
+    if (!token) {
+      console.log('[Middleware] No token found, redirecting to login')
+      const loginUrl = new URL('/admin/login', request.url)
+      
+      // Add the callback URL as a query parameter
+      if (pathname !== '/admin/login') {
+        loginUrl.searchParams.set('callbackUrl', pathname + search)
+      }
+      
+      return NextResponse.redirect(loginUrl)
+    }
+    
+    // User is authenticated, allow the request
+    console.log(`[Middleware] User authenticated: ${token.email || 'unknown'}`)
+    return NextResponse.next()
+  } catch (error) {
+    console.error('[Middleware] Authentication error:', error)
+    
+    // On error, redirect to login for safety
     const loginUrl = new URL('/admin/login', request.url)
-    loginUrl.searchParams.set('callbackUrl', pathname + search)
     return NextResponse.redirect(loginUrl)
   }
-  
-  // User is authenticated, allow the request
-  console.log(`[Middleware] User authenticated: ${token.email}`)
-  return NextResponse.next()
 }
 
 export const config = {
