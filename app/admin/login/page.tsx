@@ -114,16 +114,14 @@ export default function LoginPage() {
       // Add a small delay to prevent brute force
       await new Promise(resolve => setTimeout(resolve, 500))
       
-      // Use direct redirect to dashboard after successful authentication
+      // Use the simplest approach with redirect: false to handle the response manually
       const result = await signIn('credentials', {
-        redirect: true,
+        redirect: false,
         email,
-        password,
-        callbackUrl: '/admin/dashboard'
+        password
       })
       
-      // Note: The code below will only execute if redirect: true fails
-      log('Sign in result (redirect failed):', result)
+      log('Sign in result:', result)
       
       if (result?.error) {
         // Handle specific error cases
@@ -150,16 +148,31 @@ export default function LoginPage() {
           }
           return attempts
         })
-      } else if (result?.url) {
-        // Login successful but redirect failed
-        log('Login successful but redirect failed, manually redirecting to:', result.url)
+      } else {
+        // Login successful
+        log('Login successful, manually navigating to dashboard')
         // Reset login attempts on success
         setLoginAttempts(0)
-        // Force navigation to dashboard
-        window.location.href = '/admin/dashboard'
-      } else {
-        // This should not happen, but just in case
-        setError('An unexpected error occurred. Please try again.')
+        
+        // Wait a moment for the session to be established
+        setTimeout(() => {
+          try {
+            // Try router first
+            router.push('/admin/dashboard')
+            
+            // Set a fallback in case router navigation fails
+            setTimeout(() => {
+              if (window.location.pathname !== '/admin/dashboard') {
+                log('Router navigation failed, using window.location')
+                window.location.href = '/admin/dashboard'
+              }
+            }, 1000)
+          } catch (err) {
+            log('Navigation error:', err)
+            // Last resort fallback
+            window.location.href = '/admin/dashboard'
+          }
+        }, 500)
       }
     } catch (err) {
       console.error('Login error:', err)
