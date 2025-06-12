@@ -130,6 +130,13 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Only run middleware on admin routes
-  matcher: ['/admin/:path*'],
+  // Only run middleware on admin dashboard routes
+  // This prevents the middleware from interfering with NextAuth's authentication flow
+  matcher: [
+    // Only protect the dashboard and other admin routes, but NOT login
+    '/admin/dashboard/:path*',
+    '/admin/users/:path*',
+    '/admin/settings/:path*',
+    '/admin/content/:path*',
+  ],
 }
