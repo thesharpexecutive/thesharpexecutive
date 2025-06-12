@@ -4,12 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
-// Server action for direct navigation
-async function navigateToDashboard() {
-  'use server'
-  return { success: true }
-}
-
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
