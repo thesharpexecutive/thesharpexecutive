@@ -28,16 +28,33 @@ export default function LoginPage() {
     try {
       console.log('Attempting login with email:', email)
       
-      // DIRECT APPROACH: Try both methods
+      // BRUTE FORCE APPROACH: Try multiple methods in sequence
       
-      // Method 1: Direct redirect (should work in most cases)
+      // Method 1: Try direct signIn with redirect
+      try {
+        console.log('Trying method 1: signIn with redirect=true')
+        await signIn('credentials', {
+          redirect: true,
+          callbackUrl: '/admin/dashboard',
+          email,
+          password
+        })
+        
+        // If we get here, the redirect failed
+        console.log('Method 1 failed to redirect')
+      } catch (e) {
+        console.log('Method 1 error:', e)
+      }
+      
+      // Method 2: Try signIn without redirect and check result
+      console.log('Trying method 2: signIn with redirect=false')
       const result = await signIn('credentials', {
         redirect: false,
         email,
         password
       })
       
-      console.log('Sign in result:', result)
+      console.log('Method 2 sign in result:', result)
       
       if (result?.error) {
         // Handle error
@@ -48,9 +65,28 @@ export default function LoginPage() {
         
         setError(errorMsg)
       } else {
-        // Success! Force navigation to dashboard
+        // Success! Try multiple force navigation approaches
         console.log('Login successful, forcing navigation to dashboard')
-        window.location.replace('/admin/dashboard')
+        
+        // Method 3: Try router.push
+        try {
+          // Force a hard navigation to dashboard
+          console.log('CRITICAL: Forcing navigation to dashboard')
+          document.cookie = 'auth_redirect=dashboard; path=/; max-age=60;'
+          
+          // Method 3a: window.location.replace (most direct)
+          window.location.replace('/admin/dashboard')
+          
+          // Method 3b: Fallback to window.location.href
+          setTimeout(() => {
+            console.log('Fallback to window.location.href')
+            window.location.href = '/admin/dashboard'
+          }, 100)
+        } catch (e) {
+          console.error('Navigation error:', e)
+          // Last resort
+          window.location.href = '/admin/dashboard'
+        }
       }
     } catch (err) {
       console.error('Login error:', err)
