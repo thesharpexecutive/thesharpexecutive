@@ -1,13 +1,31 @@
 'use client'
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import React, { useState, useEffect } from 'react'
+import { signIn, useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+
+// Server action for direct navigation
+async function navigateToDashboard() {
+  'use server'
+  return { success: true }
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const { data: session, status } = useSession()
+
+  // Check if already logged in and redirect
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      console.log('PRODUCTION FIX: Already authenticated, redirecting to dashboard')
+      router.push('/admin/dashboard')
+    }
+  }, [status, session, router])
+
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -22,16 +40,16 @@ export default function LoginPage() {
     setError('')
     
     try {
-      console.log('PRODUCTION FIX: Attempting login with email:', email)
+      console.log('PRODUCTION HARD FIX: Attempting login with email:', email)
       
-      // First attempt - try with redirect: false to get the result
+      // Attempt login with redirect: false
       const result = await signIn('credentials', {
         redirect: false,
         email,
         password
       })
       
-      console.log('PRODUCTION FIX: Sign in result:', result)
+      console.log('PRODUCTION HARD FIX: Sign in result:', result)
       
       if (result?.error) {
         // Handle error
@@ -40,24 +58,32 @@ export default function LoginPage() {
         return
       }
       
-      // Success! Force redirect immediately
-      console.log('PRODUCTION FIX: Login successful, forcing redirect to dashboard')
+      // Success! Try multiple redirect approaches
+      console.log('PRODUCTION HARD FIX: Login successful, trying all redirect methods')
       
-      // Try multiple redirect methods to ensure one works
-      // Method 1: window.location.href
-      window.location.href = '/admin/dashboard'
+      // Method 1: Next.js router push
+      router.push('/admin/dashboard')
       
-      // Method 2: window.location.replace (after a short delay)
+      // Method 2: Direct window location change
       setTimeout(() => {
-        console.log('PRODUCTION FIX: Method 1 failed, trying method 2')
-        window.location.replace('/admin/dashboard')
+        console.log('PRODUCTION HARD FIX: Method 1 failed, trying direct location change')
+        window.location.href = '/admin/dashboard'
         
-        // Method 3: Hard-coded absolute URL (after another delay)
+        // Method 3: Hard refresh with absolute URL
         setTimeout(() => {
-          console.log('PRODUCTION FIX: Method 2 failed, trying method 3 with absolute URL')
-          // Use the current origin to build the absolute URL
+          console.log('PRODUCTION HARD FIX: Method 2 failed, trying hard refresh')
           const origin = window.location.origin
-          window.location.href = `${origin}/admin/dashboard`
+          window.location.replace(`${origin}/admin/dashboard`)
+          
+          // Method 4: Form submission to force server navigation
+          setTimeout(() => {
+            console.log('PRODUCTION HARD FIX: Method 3 failed, trying form submission')
+            const form = document.createElement('form')
+            form.method = 'POST'
+            form.action = '/admin/dashboard'
+            document.body.appendChild(form)
+            form.submit()
+          }, 500)
         }, 500)
       }, 500)
     } catch (err) {
