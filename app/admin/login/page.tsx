@@ -57,17 +57,24 @@ export default function LoginPage() {
         const targetPath = new URL(callbackUrl, window.location.origin).pathname
         const currentPath = window.location.pathname
         
+        // Check if we're already on the login page and authenticated
+        if (currentPath === '/admin/login' && status === 'authenticated') {
+          log('Authenticated on login page, redirecting to dashboard')
+          router.push('/admin/dashboard')
+          return
+        }
+        
+        // Only redirect if we're not already on the target path
         if (targetPath !== currentPath) {
-          log(`Redirecting from ${currentPath} to:`, callbackUrl)
-          // Use window.location to ensure a full page reload and proper session handling
-          window.location.href = callbackUrl
+          log(`Redirecting from ${currentPath} to:`, targetPath)
+          router.push(targetPath)
         } else {
           log('Already on target page, preventing redirect loop')
         }
       } catch (error) {
         console.error('Error in redirect logic:', error)
         // Fallback to dashboard if there's an error with the callback URL
-        window.location.href = '/admin/dashboard'
+        router.push('/admin/dashboard')
       }
     } else if (status === 'unauthenticated') {
       log('User is not authenticated, showing login form')
