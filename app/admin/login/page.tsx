@@ -114,14 +114,16 @@ export default function LoginPage() {
       // Add a small delay to prevent brute force
       await new Promise(resolve => setTimeout(resolve, 500))
       
+      // Use direct redirect to dashboard after successful authentication
       const result = await signIn('credentials', {
-        redirect: false,
+        redirect: true,
         email,
         password,
-        callbackUrl
+        callbackUrl: '/admin/dashboard'
       })
       
-      log('Sign in result:', result)
+      // Note: The code below will only execute if redirect: true fails
+      log('Sign in result (redirect failed):', result)
       
       if (result?.error) {
         // Handle specific error cases
@@ -149,12 +151,12 @@ export default function LoginPage() {
           return attempts
         })
       } else if (result?.url) {
-        // Login successful
-        log('Login successful, redirecting to:', result.url)
+        // Login successful but redirect failed
+        log('Login successful but redirect failed, manually redirecting to:', result.url)
         // Reset login attempts on success
         setLoginAttempts(0)
-        // Use the handleSuccess function for successful login
-        handleSuccess('/admin/dashboard')
+        // Force navigation to dashboard
+        window.location.href = '/admin/dashboard'
       } else {
         // This should not happen, but just in case
         setError('An unexpected error occurred. Please try again.')
