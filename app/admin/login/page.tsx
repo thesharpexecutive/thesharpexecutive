@@ -84,8 +84,8 @@ export default function LoginPage() {
   // Handle successful login
   const handleSuccess = (redirectUrl: string) => {
     log('Login successful, redirecting to:', redirectUrl)
-    // Force a full page reload to ensure session is set
-    window.location.href = redirectUrl
+    // Use router for client-side navigation
+    router.push('/admin/dashboard')
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -154,7 +154,7 @@ export default function LoginPage() {
         // Reset login attempts on success
         setLoginAttempts(0)
         // Use the handleSuccess function for successful login
-        handleSuccess(result.url)
+        handleSuccess('/admin/dashboard')
       } else {
         // This should not happen, but just in case
         setError('An unexpected error occurred. Please try again.')
