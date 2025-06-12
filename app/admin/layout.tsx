@@ -42,25 +42,9 @@ export default function AdminLayout({
     }
   }, [status, pathname, isLoginPage, mounted])
 
-  // Handle redirect if already authenticated and on login page
-  useEffect(() => {
-    // Prevent infinite redirect loops by checking if we're already redirecting
-    if (mounted && status === 'authenticated' && isLoginPage && !redirecting) {
-      // Set redirecting flag to prevent multiple redirects
-      setRedirecting(true)
-      
-      const callbackUrl = searchParams?.get('callbackUrl') || '/admin/dashboard'
-      console.log('[AdminLayout] Already authenticated, redirecting to:', callbackUrl)
-      
-      // Use direct window.location navigation for a clean redirect
-      window.location.href = callbackUrl
-    }
-    
-    // Reset redirecting flag if we're not on the login page or not authenticated
-    if ((!isLoginPage || status !== 'authenticated') && redirecting) {
-      setRedirecting(false)
-    }
-  }, [status, isLoginPage, searchParams, router, mounted, redirecting])
+  // COMPLETELY SIMPLIFIED: No redirect logic in AdminLayout
+  // Let the login page handle its own redirects
+  // This prevents any redirect loops between layout and page components
 
   // If this is the login page, just render the children (login form)
   if (isLoginPage) {
