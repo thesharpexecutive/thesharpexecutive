@@ -46,7 +46,24 @@ export default function AdminLayout({
     if (mounted && status === 'authenticated' && isLoginPage) {
       const callbackUrl = searchParams?.get('callbackUrl') || '/admin/dashboard'
       console.log('[AdminLayout] Already authenticated, redirecting to:', callbackUrl)
-      router.push(callbackUrl)
+      
+      // Use direct window.location navigation instead of router.push
+      try {
+        // First attempt with router
+        router.push(callbackUrl)
+        
+        // Set a fallback with direct navigation after a short delay
+        setTimeout(() => {
+          if (window.location.pathname === '/admin/login') {
+            console.log('[AdminLayout] Router redirect failed, using window.location')
+            window.location.href = callbackUrl
+          }
+        }, 500)
+      } catch (err) {
+        console.error('[AdminLayout] Navigation error:', err)
+        // Fallback to direct navigation
+        window.location.href = callbackUrl
+      }
     }
   }, [status, isLoginPage, searchParams, router, mounted])
 
