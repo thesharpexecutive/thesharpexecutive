@@ -22,25 +22,44 @@ export default function LoginPage() {
     setError('')
     
     try {
-      console.log('DIRECT LOGIN: Attempting login with email:', email)
+      console.log('PRODUCTION FIX: Attempting login with email:', email)
       
-      // First attempt - try with redirect: true
-      await signIn('credentials', {
-        redirect: true,
-        callbackUrl: '/admin/dashboard',
+      // First attempt - try with redirect: false to get the result
+      const result = await signIn('credentials', {
+        redirect: false,
         email,
         password
       })
       
-      // If we get here, the redirect failed, so force it
-      console.log('DIRECT LOGIN: First redirect attempt failed, forcing redirect')
+      console.log('PRODUCTION FIX: Sign in result:', result)
       
-      // Force redirect with a slight delay
+      if (result?.error) {
+        // Handle error
+        setError(result.error === 'CredentialsSignin' ? 'Invalid email or password' : result.error)
+        setIsLoading(false)
+        return
+      }
+      
+      // Success! Force redirect immediately
+      console.log('PRODUCTION FIX: Login successful, forcing redirect to dashboard')
+      
+      // Try multiple redirect methods to ensure one works
+      // Method 1: window.location.href
+      window.location.href = '/admin/dashboard'
+      
+      // Method 2: window.location.replace (after a short delay)
       setTimeout(() => {
-        console.log('DIRECT LOGIN: Forcing redirect to dashboard')
+        console.log('PRODUCTION FIX: Method 1 failed, trying method 2')
         window.location.replace('/admin/dashboard')
+        
+        // Method 3: Hard-coded absolute URL (after another delay)
+        setTimeout(() => {
+          console.log('PRODUCTION FIX: Method 2 failed, trying method 3 with absolute URL')
+          // Use the current origin to build the absolute URL
+          const origin = window.location.origin
+          window.location.href = `${origin}/admin/dashboard`
+        }, 500)
       }, 500)
-      
     } catch (err) {
       console.error('Login error:', err)
       setError('An unexpected error occurred')
