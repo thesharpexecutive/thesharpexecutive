@@ -10,25 +10,8 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   
-  // ULTRA SIMPLIFIED APPROACH: Check session and redirect
-  useEffect(() => {
-    // Check if we're already authenticated
-    const checkSession = async () => {
-      try {
-        const session = await getSession()
-        
-        if (session) {
-          console.log('Session found, redirecting to dashboard')
-          // Use the most direct approach possible
-          window.location.replace('/admin/dashboard')
-        }
-      } catch (err) {
-        console.error('Error checking session:', err)
-      }
-    }
-    
-    checkSession()
-  }, [])
+  // NO AUTOMATIC SESSION CHECK - only redirect after explicit login
+  // This prevents infinite redirect loops
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
