@@ -1,76 +1,37 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { signIn, useSession } from 'next-auth/react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { signIn, useSession, getSession } from 'next-auth/react'
 import Link from 'next/link'
-
-// Debug helper
-const log = (...args: any[]) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Login]', ...args)
-  }
-}
-
-// Maximum number of login attempts before rate limiting
-const MAX_LOGIN_ATTEMPTS = 3
-const RATE_LIMIT_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [loginAttempts, setLoginAttempts] = useState(0)
-  const [isRateLimited, setIsRateLimited] = useState(false)
   
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const { status } = useSession()
-  
-  // Get callback URL from query params or default to /admin/dashboard
-  const callbackUrl = searchParams?.get('callbackUrl') || '/admin/dashboard'
-  
-  // Handle rate limiting
+  // ULTRA SIMPLIFIED APPROACH: Check session and redirect
   useEffect(() => {
-    if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
-      setIsRateLimited(true)
-      const timer = setTimeout(() => {
-        setIsRateLimited(false)
-        setLoginAttempts(0)
-      }, RATE_LIMIT_DURATION)
-      
-      return () => clearTimeout(timer)
+    // Check if we're already authenticated
+    const checkSession = async () => {
+      try {
+        const session = await getSession()
+        
+        if (session) {
+          console.log('Session found, redirecting to dashboard')
+          // Use the most direct approach possible
+          window.location.replace('/admin/dashboard')
+        }
+      } catch (err) {
+        console.error('Error checking session:', err)
+      }
     }
-  }, [loginAttempts])
-  
-  // If already logged in, redirect to dashboard - SIMPLIFIED
-  useEffect(() => {
-    // Only run this effect in the browser
-    if (typeof window === 'undefined') return
     
-    // Check for redirect loop prevention cookie
-    const hasRedirectCookie = document.cookie.includes('login_redirect=true')
-    
-    if (status === 'authenticated' && !hasRedirectCookie) {
-      log('Already authenticated, redirecting to dashboard')
-      
-      // Set a cookie to prevent redirect loops
-      document.cookie = 'login_redirect=true; path=/; max-age=10;'
-      
-      // Use direct navigation for most reliable redirect
-      window.location.href = '/admin/dashboard'
-    }
-  }, [status])
+    checkSession()
+  }, [])
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
-    // Check rate limiting
-    if (isRateLimited) {
-      setError('Too many login attempts. Please try again later.')
-      return
-    }
     
     // Basic validation
     if (!email || !password) {
@@ -82,66 +43,30 @@ export default function LoginPage() {
     setError('')
     
     try {
-      log(`Login attempt ${loginAttempts + 1} with email:`, email)
+      console.log('Attempting login with email:', email)
       
-      // Add a small delay to prevent brute force
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // DIRECT APPROACH: Try both methods
       
-      // MOST DIRECT APPROACH: Use signIn with redirect: true
-      log('Attempting direct login with redirect')
-      
-      // Use direct redirect approach for simplicity
-      await signIn('credentials', {
-        redirect: true,
-        email,
-        password,
-        callbackUrl: '/admin/dashboard'
-      })
-      
-      // If we get here, the redirect failed
-      log('Direct redirect failed, trying fallback')
-      
-      // Fallback approach
+      // Method 1: Direct redirect (should work in most cases)
       const result = await signIn('credentials', {
         redirect: false,
         email,
         password
       })
       
-      log('Fallback sign in result:', result)
+      console.log('Sign in result:', result)
       
       if (result?.error) {
-        // Handle specific error cases
-        let errorMsg = 'An error occurred during login'
-        
-        if (result.error === 'CredentialsSignin') {
-          errorMsg = 'Invalid email or password'
-        } else if (result.error.includes('too many')) {
-          errorMsg = 'Too many attempts. Please try again later.'
-          setIsRateLimited(true)
-        } else if (result.error) {
+        // Handle error
+        let errorMsg = 'Invalid email or password'
+        if (result.error !== 'CredentialsSignin') {
           errorMsg = result.error
         }
         
-        log('Login error:', { error: result.error, message: errorMsg })
         setError(errorMsg)
-        
-        // Increment login attempts on failure
-        setLoginAttempts(prev => {
-          const attempts = prev + 1
-          if (attempts >= MAX_LOGIN_ATTEMPTS) {
-            setIsRateLimited(true)
-            setError('Too many failed attempts. Please try again later.')
-          }
-          return attempts
-        })
       } else {
-        // Login successful but redirect failed
-        log('Login successful but redirect failed, using forced navigation')
-        // Reset login attempts on success
-        setLoginAttempts(0)
-        
-        // FORCE NAVIGATION: Most direct approach
+        // Success! Force navigation to dashboard
+        console.log('Login successful, forcing navigation to dashboard')
         window.location.replace('/admin/dashboard')
       }
     } catch (err) {
@@ -210,8 +135,8 @@ export default function LoginPage() {
           <div>
             <button
               type="submit"
-              disabled={isLoading || isRateLimited}
-              className={`group relative flex w-full justify-center rounded-md px-4 py-2 text-sm font-medium text-white ${isLoading || isRateLimited ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+              disabled={isLoading}
+              className={`group relative flex w-full justify-center rounded-md px-4 py-2 text-sm font-medium text-white ${isLoading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
