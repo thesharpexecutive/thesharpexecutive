@@ -44,55 +44,25 @@ export default function LoginPage() {
     }
   }, [loginAttempts])
   
-  // If already logged in, redirect to callback or dashboard
+  // If already logged in, redirect to dashboard - SIMPLIFIED
   useEffect(() => {
     // Only run this effect in the browser
     if (typeof window === 'undefined') return
     
-    if (status === 'authenticated') {
-      log('Already authenticated, checking redirect...')
-      
-      // Only redirect if we're not already on the target page to prevent loops
-      try {
-        const targetPath = new URL(callbackUrl, window.location.origin).pathname
-        const currentPath = window.location.pathname
-        
-        // Check if we're already on the login page and authenticated
-        if (currentPath === '/admin/login' && status === 'authenticated') {
-          log('Authenticated on login page, redirecting to dashboard')
-          router.push('/admin/dashboard')
-          return
-        }
-        
-        // Only redirect if we're not already on the target path
-        if (targetPath !== currentPath) {
-          log(`Redirecting from ${currentPath} to:`, targetPath)
-          router.push(targetPath)
-        } else {
-          log('Already on target page, preventing redirect loop')
-        }
-      } catch (error) {
-        console.error('Error in redirect logic:', error)
-        // Fallback to dashboard if there's an error with the callback URL
-        router.push('/admin/dashboard')
-      }
-    } else if (status === 'unauthenticated') {
-      log('User is not authenticated, showing login form')
-    }
-  }, [status, callbackUrl])
-  
-  // Handle successful login
-  const handleSuccess = async () => {
-    log('Login successful, redirecting to dashboard')
+    // Check for redirect loop prevention cookie
+    const hasRedirectCookie = document.cookie.includes('login_redirect=true')
     
-    try {
-      // Force a hard navigation to the dashboard
+    if (status === 'authenticated' && !hasRedirectCookie) {
+      log('Already authenticated, redirecting to dashboard')
+      
+      // Set a cookie to prevent redirect loops
+      document.cookie = 'login_redirect=true; path=/; max-age=10;'
+      
+      // Use direct navigation for most reliable redirect
       window.location.href = '/admin/dashboard'
-    } catch (err) {
-      console.error('Navigation error:', err)
     }
-  }
-
+  }, [status])
+  
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
@@ -104,11 +74,9 @@ export default function LoginPage() {
     
     // Basic validation
     if (!email || !password) {
-      setError('Please enter both email and password')
+      setError('Email and password are required')
       return
     }
-    
-    if (isLoading) return
     
     setIsLoading(true)
     setError('')
@@ -119,69 +87,66 @@ export default function LoginPage() {
       // Add a small delay to prevent brute force
       await new Promise(resolve => setTimeout(resolve, 500))
       
-      // First attempt: Try direct navigation approach
-      try {
-        // Use signIn with redirect: true first
-        await signIn('credentials', {
-          redirect: true,
-          email,
-          password,
-          callbackUrl: '/admin/dashboard'
-        })
+      // MOST DIRECT APPROACH: Use signIn with redirect: true
+      log('Attempting direct login with redirect')
+      
+      // Use direct redirect approach for simplicity
+      await signIn('credentials', {
+        redirect: true,
+        email,
+        password,
+        callbackUrl: '/admin/dashboard'
+      })
+      
+      // If we get here, the redirect failed
+      log('Direct redirect failed, trying fallback')
+      
+      // Fallback approach
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password
+      })
+      
+      log('Fallback sign in result:', result)
+      
+      if (result?.error) {
+        // Handle specific error cases
+        let errorMsg = 'An error occurred during login'
         
-        // If we get here, the redirect failed
-        log('Direct redirect failed, trying fallback')
-        
-        // Second attempt: Try signIn with redirect: false
-        const result = await signIn('credentials', {
-          redirect: false,
-          email,
-          password
-        })
-        
-        log('Sign in result:', result)
-        
-        if (result?.error) {
-          // Handle specific error cases
-          let errorMsg = 'An error occurred during login'
-          
-          if (result.error === 'CredentialsSignin') {
-            errorMsg = 'Invalid email or password'
-          } else if (result.error.includes('too many')) {
-            errorMsg = 'Too many attempts. Please try again later.'
-            setIsRateLimited(true)
-          } else if (result.error) {
-            errorMsg = result.error
-          }
-          
-          log('Login error:', { error: result.error, message: errorMsg })
-          setError(errorMsg)
-          
-          // Increment login attempts on failure
-          setLoginAttempts(prev => {
-            const attempts = prev + 1
-            if (attempts >= MAX_LOGIN_ATTEMPTS) {
-              setIsRateLimited(true)
-              setError('Too many failed attempts. Please try again later.')
-            }
-            return attempts
-          })
-        } else {
-          // Login successful but redirect failed
-          log('Login successful, using manual navigation')
-          // Reset login attempts on success
-          setLoginAttempts(0)
-          
-          // Use handleSuccess for navigation
-          handleSuccess()
+        if (result.error === 'CredentialsSignin') {
+          errorMsg = 'Invalid email or password'
+        } else if (result.error.includes('too many')) {
+          errorMsg = 'Too many attempts. Please try again later.'
+          setIsRateLimited(true)
+        } else if (result.error) {
+          errorMsg = result.error
         }
-      } catch (err) {
-        log('Error during sign in process:', err)
-        setError('An unexpected error occurred. Please try again.')
+        
+        log('Login error:', { error: result.error, message: errorMsg })
+        setError(errorMsg)
+        
+        // Increment login attempts on failure
+        setLoginAttempts(prev => {
+          const attempts = prev + 1
+          if (attempts >= MAX_LOGIN_ATTEMPTS) {
+            setIsRateLimited(true)
+            setError('Too many failed attempts. Please try again later.')
+          }
+          return attempts
+        })
+      } else {
+        // Login successful but redirect failed
+        log('Login successful but redirect failed, using forced navigation')
+        // Reset login attempts on success
+        setLoginAttempts(0)
+        
+        // FORCE NAVIGATION: Most direct approach
+        window.location.replace('/admin/dashboard')
       }
     } catch (err) {
       console.error('Login error:', err)
-      setError('An error occurred during login. Please try again.')
+      setError('An unexpected error occurred')
     } finally {
       setIsLoading(false)
     }

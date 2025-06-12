@@ -50,6 +50,18 @@ export const authOptions: NextAuthOptions = {
   },
   // Configure session handling
   useSecureCookies: process.env.NODE_ENV === 'production',
+  // Improved redirect handling
+  events: {
+    async signIn(message) {
+      log('User signed in event:', message)
+    },
+    async signOut(message) {
+      log('User signed out event:', message)
+    },
+    async session(message) {
+      log('Session event:', message)
+    },
+  },
   providers: [
     CredentialsProvider({
       name: 'credentials',
