@@ -70,8 +70,8 @@ export async function POST(request: Request) {
     await writeFile(filePath, buffer)
 
     // Return the URL to access the file
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-    const fileUrl = `${baseUrl}/uploads/${fileName}`
+    // Use a relative URL instead of an absolute URL to avoid environment-specific issues
+    const fileUrl = `/uploads/${fileName}`
 
     return NextResponse.json({ url: fileUrl })
   } catch (error) {
