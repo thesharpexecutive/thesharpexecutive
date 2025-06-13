@@ -143,6 +143,8 @@ export function PostEditor({
     if (!file) return null
     
     try {
+      console.log('Uploading image:', { isFeaturedImage, fileType: file.type, fileSize: file.size })
+      
       // Check if the file is an image
       if (!file.type.startsWith('image/')) {
         toast.error('Please upload an image file')
@@ -158,20 +160,26 @@ export function PostEditor({
       const formData = new FormData()
       formData.append('file', file)
       
+      console.log('Sending upload request to /api/upload')
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       })
       
       if (!response.ok) {
+        console.error('Upload response not OK:', response.status, response.statusText)
         throw new Error('Upload failed')
       }
       
-      const { url } = await response.json()
+      const data = await response.json()
+      console.log('Upload response:', data)
+      const { url } = data
       
       if (isFeaturedImage) {
+        console.log('Setting featured image URL:', url)
         return url
       } else {
+        console.log('Inserting image into editor at cursor position:', url)
         // Insert the image at the current cursor position
         editor?.chain().focus().setImage({ src: url }).run()
         return url
@@ -210,10 +218,16 @@ export function PostEditor({
   }
 
   const addImage = useCallback((isFeaturedImage = false) => {
+    console.log('addImage called with isFeaturedImage:', isFeaturedImage)
     if (fileInputRef.current) {
       fileInputRef.current.accept = 'image/*'
-      fileInputRef.current.onchange = (e) => handleFileChange(e as any, isFeaturedImage)
+      fileInputRef.current.onchange = (e) => {
+        console.log('File input change event triggered', { isFeaturedImage })
+        handleFileChange(e as any, isFeaturedImage)
+      }
       fileInputRef.current.click()
+    } else {
+      console.error('fileInputRef.current is null')
     }
   }, [])
 
