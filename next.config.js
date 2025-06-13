@@ -9,6 +9,14 @@ const nextConfig = {
         hostname: 'localhost',
         port: '3000',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.thesharpexecutive.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'thesharpexecutive.com',
+      },
     ],
   },
   experimental: {
