@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import RootLayoutClient from './RootLayoutClient'
-import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'The Sharp Executive',
@@ -15,19 +14,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Google Analytics 4 Tracking Code */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=G-8HHHLV2GXW`}
-          strategy="afterInteractive"
+        {/* Google tag (gtag.js) */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-8HHHLV2GXW"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-8HHHLV2GXW');
+            `,
+          }}
         />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-8HHHLV2GXW');
-          `}
-        </Script>
       </head>
       <body>
         <RootLayoutClient>{children}</RootLayoutClient>
