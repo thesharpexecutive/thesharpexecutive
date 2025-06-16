@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { Inter } from 'next/font/google'
+import Script from 'next/script'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { Providers } from './providers'
-import { initGA, logPageView, GA_MEASUREMENT_ID } from '@/lib/analytics'
-import Script from 'next/script'
-import { usePathname, useSearchParams } from 'next/navigation'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -22,45 +20,24 @@ export default function RootLayoutClient({
   // This effect ensures we only render after mounting to avoid hydration mismatches
   useEffect(() => {
     setMounted(true)
-    
-    // Initialize Google Analytics
-    initGA()
   }, [])
-  
-  // Track page views
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  
-  useEffect(() => {
-    if (pathname) {
-      // Include search parameters if they exist
-      const url = searchParams?.toString() 
-        ? `${pathname}?${searchParams.toString()}` 
-        : pathname
-      logPageView(url)
-    }
-  }, [pathname, searchParams])
 
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <head>
-        {/* Google Analytics Script */}
-        {GA_MEASUREMENT_ID && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-              strategy="afterInteractive"
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${GA_MEASUREMENT_ID}');
-              `}
-            </Script>
-          </>
-        )}
+        {/* Google Analytics 4 */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-8HHHLV2GXW"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-8HHHLV2GXW');
+          `}
+        </Script>
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col`} suppressHydrationWarning>
         {mounted ? (
