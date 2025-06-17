@@ -20,29 +20,33 @@ export default function ThankYouPage() {
         </p>
         
         <div className="space-y-4 max-w-md mx-auto">
-          <p className="text-slate-600">
-            In the meantime, check out our latest blog posts:
+          <p className="text-xl font-semibold text-slate-800 mb-2">
+            Ready for Your Next Step?
           </p>
           
-          <div className="space-y-3 text-left bg-slate-50 p-6 rounded-lg">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 h-2 w-2 mt-2.5 bg-blue-600 rounded-full"></div>
-              <div>
-                <Link href="/blog" className="font-medium text-blue-600 hover:underline">
-                  The 3-Step Executive Clarity System
-                </Link>
-                <p className="text-sm text-slate-500">Learn how top executives maintain focus all day</p>
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-100 shadow-sm">
+            <div className="flex flex-col items-center text-center mb-4">
+              <h3 className="text-2xl font-bold text-blue-800 mb-3">Discover NeuroEnergizer</h3>
+              <p className="text-slate-700 mb-4">Watch this short video to learn how you can optimize your mental performance and executive function.</p>
+              
+              <div className="w-full max-w-md bg-slate-200 rounded-lg mb-4 aspect-video flex items-center justify-center">
+                <div className="text-center">
+                  <p className="text-slate-600 text-sm mb-2">Video Preview</p>
+                  <Button asChild className="bg-red-600 hover:bg-red-700">
+                    <Link href="https://neuroenergizer.com/explore?affiliate=boundcomm2" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      Watch Now
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 h-2 w-2 mt-2.5 bg-blue-600 rounded-full"></div>
-              <div>
-                <Link href="/blog" className="font-medium text-blue-600 hover:underline">
-                  Morning Routines of Successful Leaders
-                </Link>
-                <p className="text-sm text-slate-500">Start your day with clarity and purpose</p>
-              </div>
-            </div>
+            
+            <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
+              <Link href="https://neuroenergizer.com/explore?affiliate=boundcomm2" target="_blank" rel="noopener noreferrer">
+                Learn More About NeuroEnergizer
+              </Link>
+            </Button>
           </div>
           
           <Button asChild className="mt-8 w-full sm:w-auto">
