@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import Image from 'next/image'
 import { format } from 'date-fns'
 import { Metadata } from 'next'
+import { IframeTransformer } from '@/components/blog/iframe-transformer'
 
 type Category = {
   id: string
@@ -120,14 +121,7 @@ export default async function BlogPostPage({
         )}
 
         <div className="mx-auto max-w-2xl mt-12">
-          <div 
-            className="prose prose-lg prose-blue prose-headings:font-semibold prose-a:text-blue-600 hover:prose-a:text-blue-500 prose-img:rounded-xl max-w-none
-                      [&_h1]:text-4xl [&_h1]:font-bold [&_h1]:mt-12 [&_h1]:mb-6
-                      [&_h2]:text-3xl [&_h2]:font-bold [&_h2]:mt-10 [&_h2]:mb-4
-                      [&_h3]:text-2xl [&_h3]:font-bold [&_h3]:mt-8 [&_h3]:mb-3
-                      [&_p]:my-4 [&_ul]:my-4 [&_ol]:my-4"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+          <IframeTransformer content={post.content} />
           
           <div className="mt-16 border-t border-gray-200 pt-8">
             <h3 className="text-sm font-semibold leading-6 text-gray-900">

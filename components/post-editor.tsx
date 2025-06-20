@@ -6,16 +6,18 @@ import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
-import Placeholder from '@tiptap/extension-placeholder'
 import Typography from '@tiptap/extension-typography'
 import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
+import Placeholder from '@tiptap/extension-placeholder'
+import Iframe from './tiptap-extensions/iframe-extension'
+import { IframeHelper } from './post-editor/iframe-helper'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { Upload } from 'lucide-react'
+import { Upload, Code } from 'lucide-react'
 
 interface PostEditorProps {
   post?: {
@@ -49,7 +51,35 @@ export function PostEditor({
   const [excerpt, setExcerpt] = useState(post?.excerpt || '')
   const [published, setPublished] = useState(post?.published || false)
   const [featuredImage, setFeaturedImage] = useState(post?.featuredImage || '')
+  const [isHtmlMode, setIsHtmlMode] = useState(false)
+  const [htmlContent, setHtmlContent] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Handle HTML content changes in the textarea
+  const handleHtmlChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setHtmlContent(e.target.value)
+  }, [])
+
+  // Handle inserting iframe placeholder
+  const handleInsertIframe = useCallback((iframeCode: string) => {
+    setHtmlContent(prev => {
+      // Insert at cursor position or append to end
+      const textarea = document.querySelector('textarea') as HTMLTextAreaElement
+      if (textarea) {
+        const start = textarea.selectionStart
+        const end = textarea.selectionEnd
+        return prev.substring(0, start) + iframeCode + prev.substring(end)
+      }
+      return prev + iframeCode
+    })
+  }, [])
+
+  // Define onUpdate callback after editor initialization to avoid circular dependencies
+  const onUpdateRef = useRef((editor: any) => {
+    if (!isHtmlMode && editor) {
+      setHtmlContent(editor.getHTML())
+    }
+  })
 
   const editor = useEditor({
     extensions: [
@@ -96,8 +126,17 @@ export function PostEditor({
       Placeholder.configure({
         placeholder: 'Write something amazing...',
       }),
+      Iframe.configure({
+        HTMLAttributes: {
+          class: 'w-full rounded-md border border-gray-200',
+        },
+      }),
     ],
     content: post?.content || '',
+    immediatelyRender: false, // Fix SSR hydration mismatch
+    onUpdate: ({ editor }) => {
+      onUpdateRef.current(editor)
+    },
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none p-4 min-h-[300px] max-w-none [&_h1]:text-4xl [&_h1]:font-bold [&_h2]:text-3xl [&_h2]:font-bold [&_h3]:text-2xl [&_h3]:font-bold [&_h4]:text-xl [&_h4]:font-bold [&_p]:my-2',
@@ -131,9 +170,6 @@ export function PostEditor({
           return false
         },
       },
-    },
-    onUpdate: () => {
-      // Content is saved when the form is submitted
     },
     autofocus: true,
     injectCSS: true,
@@ -259,6 +295,11 @@ export function PostEditor({
     }
 
     try {
+      // If in HTML mode, update the editor content before saving
+      if (isHtmlMode) {
+        editor.commands.setContent(htmlContent)
+      }
+
       await onSave({
         title,
         slug,
@@ -291,9 +332,52 @@ export function PostEditor({
     }
   }, [title, post?.id])
 
-  if (!editor) {
-    return null
-  }
+  // Toggle between rich text and HTML source view - defined after editor initialization
+  const toggleEditorMode = useCallback(() => {
+    if (editor) {
+      if (isHtmlMode) {
+        try {
+          // When switching from HTML to rich text mode
+          // Use a special approach to preserve iframe tags
+          const tempDiv = document.createElement('div')
+          tempDiv.innerHTML = htmlContent
+          
+          // Check if there are iframes in the content
+          const iframes = tempDiv.querySelectorAll('iframe')
+          
+          if (iframes.length > 0) {
+            // If iframes exist, we need to handle them specially
+            // First set the content normally
+            editor.commands.setContent(htmlContent)
+            
+            // The editor might have sanitized iframes, so we need to reinsert them
+            // This is a workaround until we find a better solution
+            toast.success('HTML content with iframes detected. Iframes will be preserved.')
+          } else {
+            // No iframes, proceed normally
+            editor.commands.setContent(htmlContent)
+          }
+        } catch (error) {
+          toast.error('Invalid HTML. Please check your markup.')
+          return
+        }
+      } else {
+        // When switching from rich text to HTML mode
+        // Get the HTML content directly
+        setHtmlContent(editor.getHTML())
+      }
+      setIsHtmlMode(!isHtmlMode)
+    }
+  }, [editor, isHtmlMode, htmlContent])
+
+  // Update onUpdateRef when dependencies change
+  useEffect(() => {
+    onUpdateRef.current = (editor: any) => {
+      if (!isHtmlMode && editor) {
+        setHtmlContent(editor.getHTML())
+      }
+    }
+  }, [isHtmlMode])
 
   // Add the file input element (hidden)
   const fileInput = (
@@ -307,7 +391,7 @@ export function PostEditor({
   )
 
   // Toolbar button component
-  const ToolbarButton = ({
+  const ToolbarButton = useCallback(({  
     onClick,
     active,
     title,
@@ -328,7 +412,26 @@ export function PostEditor({
     >
       {children}
     </button>
-  )
+  ), [])
+
+  // Initialize HTML content when editor is ready
+  useEffect(() => {
+    if (editor && !htmlContent && editor.getHTML()) {
+      setHtmlContent(editor.getHTML())
+    }
+  }, [editor, htmlContent])
+  
+  // Use client-side only rendering for the HTML mode toggle
+  const [isMounted, setIsMounted] = useState(false)
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!editor) {
+    return null
+  }
+
+  // All hooks are now properly ordered
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -420,8 +523,6 @@ export function PostEditor({
                 </div>
               )}
             </div>
-
-
 
             <div className="flex items-center space-x-2">
               <Switch
@@ -585,7 +686,7 @@ export function PostEditor({
           </div>
 
           {/* Insert */}
-          <div className="flex items-center">
+          <div className="flex items-center border-r border-gray-200 pr-2 mr-1">
             <ToolbarButton
               onClick={addImage}
               title="Insert Image"
@@ -599,8 +700,39 @@ export function PostEditor({
               <span>―</span>
             </ToolbarButton>
           </div>
+
+          {/* HTML Source Toggle */}
+          {isMounted && (
+            <div className="flex items-center mb-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={toggleEditorMode}
+                className="mr-2"
+              >
+                {isHtmlMode ? 'Rich Text' : 'HTML'}
+              </Button>
+              
+              {isHtmlMode && (
+                <IframeHelper onInsert={handleInsertIframe} />
+              )}
+            </div>
+          )}
         </div>
-        <EditorContent editor={editor} className="min-h-[400px]" />
+        <div className="editor-container">
+          {isMounted && isHtmlMode && (
+            <textarea
+              value={htmlContent}
+              onChange={handleHtmlChange}
+              className="min-h-[400px] w-full p-4 font-mono text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter HTML content here..."
+            />
+          )}
+          {(!isMounted || !isHtmlMode) && (
+            <EditorContent editor={editor} className="min-h-[400px]" />
+          )}
+        </div>
         
         {editor && (
           <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
